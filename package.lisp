@@ -1,6 +1,6 @@
 ;;;; package.lisp
 
-(defpackage #:hl7v2
+(defpackage #:lisplevel7
   (:use #:cl)
   (:export :HL7Component)
   (:shadowing-import-from #:split-sequence))

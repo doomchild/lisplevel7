@@ -1,4 +1,4 @@
-(in-package #:hl7v2)
+(in-package #:lisplevel7)
 
 (defparameter *whitespace* '(#\Space #\Tab #\Newline #\Backspace #\Linefeed #\Page #\Return #\Rubout))
 
