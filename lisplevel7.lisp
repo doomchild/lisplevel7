@@ -2,6 +2,15 @@
 
 (defparameter *whitespace* '(#\Space #\Tab #\Newline #\Backspace #\Linefeed #\Page #\Return #\Rubout))
 
+(defun get-default-delimiter-hash-table ()
+  (let ((ht (make-hash-table :test #'equalp)))
+    (setf (gethash 'field ht) #\|)
+    (setf (gethash 'component ht) #\^)
+    (setf (gethash 'repeat ht) #\~)
+    (setf (gethash 'subcomponent ht) #\&)
+    (setf (gethash 'escape ht) #\\)
+    ht))
+
 (defclass HL7Message ()
   ((value :reader value :initarg :text :initform nil)
    (delimiters :reader delimiters :initarg :delimiters)
@@ -9,13 +18,13 @@
 
 (defmethod initialize-instance :around ((h HL7Message) &key text)
   (let* ((stripped (string-trim *whitespace* (remove-if-not #'standard-char-p text)))
-	 (delimiters (get-delimiters stripped)))
+	 (delimiters (read-delimiters stripped)))
     (call-next-method h :text stripped :delimiters delimiters)))
 
 (defmethod initialize-instance :around ((h HL7Message) &key delimiters)
   (call-next-method h :delimiters delimiters))
 
-(defun get-delimiters (s)
+(defun read-delimiters (s)
   (let ((ht (make-hash-table :test #'equalp)))
     (setf (gethash 'field ht) (elt s 3))
     (setf (gethash 'component ht) (elt s 4))
@@ -28,12 +37,32 @@
   (call-next-method h :delimiters delimiters))
 
 (defclass HL7Segment ()
-  ())
+  ((delimiters :reader delimiters :initarg :delimiters)
+  (value :reader value :initarg :value)
+  (fields :reader fields)))
+
+(defmethod initialize-instance :after ((s HL7Segment) &key value delimiters)
+  (let ((split (split-sequence:split-sequence (gethash 'field delimiters) value)))
+    (with-slots (fields) s
+      (setf fields (make-array (length split)))
+      (loop for f in split for i upto (length split) do
+	   (let ((repeats (split-sequence:split-sequence (gethash 'repeat delimiters) f)))
+	     (setf (elt fields i) (make-array (length repeats)
+					      :element-type 'HL7Field
+					      :initial-contents (mapcar (lambda (s) (make-instance 'HL7Field :value s :delimiters delimiters)) repeats))))))))
 
 (defclass HL7Field ()
   ((delimiters :reader delimiters :initarg :delimiters)
   (value :reader value :initarg :value)
   (components :reader components)))
+
+(defmethod initialize-instance :after ((f HL7Field) &key value delimiters)
+  (let ((split (split-sequence:split-sequence (gethash 'component delimiters) value))
+	(subcomp (gethash 'subcomponent delimiters)))
+    (with-slots (components) f
+      (setf components (make-array (length split)
+				   :element-type 'HL7Component
+				   :initial-contents (mapcar (lambda (s) (make-instance 'HL7Component :value s :delimiter subcomp)) split))))))
 
 (defclass HL7Component ()
   ((delimiter :reader delimiter :initarg :delimiter)
@@ -46,14 +75,6 @@
       (setf subcomponents (make-array (length split)
 				      :element-type 'string
 				      :initial-contents split)))))
-
-(defmethod initialize-instance :after ((f HL7Field) &key value delimiters)
-  (let ((split (split-sequence:split-sequence (gethash 'component delimiters) value))
-	(subcomp (gethash 'subcomponent delimiters)))
-    (with-slots (components) f
-      (setf components (make-array (length split)
-				   :element-type 'HL7Component
-				   :initial-contents (mapcar (lambda (s) (make-instance 'HL7Component :value s :delimiter subcomp)) split))))))
 
 (defgeneric insert-at (h index value))
 
