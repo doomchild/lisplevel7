@@ -1,8 +1,8 @@
 ;;;; hl7v2.asd
 
 (asdf:defsystem #:lisplevel7
-  :description "Describe lisplevel7 here"
-  :author "Your Name <your.name@example.com>"
+  :description "A library for parsing HL7v2 in Common Lisp."
+  :author "Lee Crabtree <lee.crabtree@gmail.com>"
   :license "Specify license here"
   :serial t
   :depends-on (#:split-sequence)
