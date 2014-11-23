@@ -12,6 +12,7 @@
 	   :fields
 	   :components
 	   :subcomponents
-	   :insert-at)
+	   :insert-at
+	   :get-default-delimiter-hash-table)
   (:shadowing-import-from #:split-sequence))
 
