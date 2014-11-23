@@ -16,10 +16,10 @@
    (delimiters :reader delimiters :initarg :delimiters)
    (segments :reader segments)))
 
-(defmethod initialize-instance :around ((h HL7Message) &key text)
+(defmethod initialize-instance :around ((h HL7Message) &key value)
   (let* ((stripped (string-trim *whitespace* (remove-if-not #'standard-char-p text)))
 	 (delimiters (read-delimiters stripped)))
-    (call-next-method h :text stripped :delimiters delimiters)))
+    (call-next-method h :value stripped :delimiters delimiters)))
 
 (defmethod initialize-instance :around ((h HL7Message) &key delimiters)
   (call-next-method h :delimiters delimiters))
