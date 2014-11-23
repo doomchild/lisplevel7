@@ -3,7 +3,7 @@
 (defparameter *whitespace* '(#\Space #\Tab #\Newline #\Backspace #\Linefeed #\Page #\Return #\Rubout))
 
 (defclass HL7Message ()
-  ((text :reader text :initarg :text :initform nil)
+  ((value :reader value :initarg :text :initform nil)
    (delimiters :reader delimiters :initarg :delimiters)
    (segments :reader segments)))
 
@@ -17,11 +17,11 @@
 
 (defun get-delimiters (s)
   (let ((ht (make-hash-table :test #'equalp)))
-    (setf (gethash "field" ht) (elt s 3))
-    (setf (gethash "component" ht) (elt s 4))
-    (setf (gethash "repeat" ht) (elt s 5))
-    (setf (gethash "subcomponent" ht) (elt s 6))
-    (setf (gethash "escape" ht) (elt s 7))
+    (setf (gethash 'field ht) (elt s 3))
+    (setf (gethash 'component ht) (elt s 4))
+    (setf (gethash 'repeat ht) (elt s 5))
+    (setf (gethash 'subcomponent ht) (elt s 6))
+    (setf (gethash 'escape ht) (elt s 7))
     ht))
 
 (defmethod initialize-instance :around ((h HL7Message) &key delimiters)
@@ -48,8 +48,8 @@
 				      :initial-contents split)))))
 
 (defmethod initialize-instance :after ((f HL7Field) &key value delimiters)
-  (let ((split (split-sequence:split-sequence (gethash "component" delimiters) value))
-	(subcomp (gethash "subcomponent" delimiters)))
+  (let ((split (split-sequence:split-sequence (gethash 'component delimiters) value))
+	(subcomp (gethash 'subcomponent delimiters)))
     (with-slots (components) f
       (setf components (make-array (length split)
 				   :element-type 'HL7Component
@@ -63,7 +63,7 @@
 
 (defmethod insert-at ((h HL7Field) index (value HL7Component))
   (with-slots (components delimiters) h
-    (extend-and-insert components 'HL7Component (make-instance 'HL7Component :value "" :delimiter (gethash "subcomponent" delimiters)) index value)))
+    (extend-and-insert components 'HL7Component (make-instance 'HL7Component :value "" :delimiter (gethash 'subcomponent delimiters)) index value)))
 
 (defun extend-and-insert (arr arr-type arr-init-element index value)
   (when (> index (length arr))
