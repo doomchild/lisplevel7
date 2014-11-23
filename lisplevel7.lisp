@@ -12,17 +12,18 @@
     ht))
 
 (defclass HL7Message ()
-  ((value :reader value :initarg :text :initform nil)
-   (delimiters :reader delimiters :initarg :delimiters)
+  ((value :reader value :initarg :value)
+   (delimiters :reader delimiters)
    (segments :reader segments)))
 
-(defmethod initialize-instance :around ((h HL7Message) &key value)
-  (let* ((stripped (string-trim *whitespace* (remove-if-not #'standard-char-p text)))
-	 (delimiters (read-delimiters stripped)))
-    (call-next-method h :value stripped :delimiters delimiters)))
-
-(defmethod initialize-instance :around ((h HL7Message) &key delimiters)
-  (call-next-method h :delimiters delimiters))
+(defmethod initialize-instance :after ((h HL7Message) &key value)
+  (let* ((stripped (remove-if-not #'standard-char-p value))
+	 (split (split-sequence:split-sequence #\Newline stripped)))
+    (with-slots (delimiters segments) h
+      (setf delimiters (read-delimiters stripped))
+      (setf segments (make-array (length split)
+				 :element-type 'HL7Segment
+				 :initial-contents (mapcar (lambda (s) (make-instance 'HL7Segment :value s :delimiters delimiters)) split))))))
 
 (defun read-delimiters (s)
   (let ((ht (make-hash-table :test #'equalp)))
@@ -32,9 +33,6 @@
     (setf (gethash 'subcomponent ht) (elt s 6))
     (setf (gethash 'escape ht) (elt s 7))
     ht))
-
-(defmethod initialize-instance :around ((h HL7Message) &key delimiters)
-  (call-next-method h :delimiters delimiters))
 
 (defclass HL7Segment ()
   ((delimiters :reader delimiters :initarg :delimiters)
