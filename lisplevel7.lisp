@@ -3,15 +3,19 @@
 (defparameter *whitespace* '(#\Space #\Tab #\Newline #\Backspace #\Linefeed #\Page #\Return #\Rubout))
 
 (defclass HL7Delimiters ()
-  ((field :accessor :field :initarg :field :initform #\|)
-   (component :accessor :component :initarg :component :initform #\^)
-   (repeat :accessor :repeat :initarg :repeat :initform #\~)
-   (subcomponent :accessor :subcomponent :initarg :subcomponent :initform #\&)
-   (escape :accessor :escape :initarg :escape :initform #\\)))
+  ((field :accessor field :initarg :field :initform #\|)
+   (component :accessor component :initarg :component :initform #\^)
+   (repeat :accessor repeat :initarg :repeat :initform #\~)
+   (subcomponent :accessor subcomponent :initarg :subcomponent :initform #\&)
+   (escape :accessor escape :initarg :escape :initform #\\)))
 
 (defclass HL7Root ()
   ((value :reader value :initarg :value)
    (delimiters :reader delimiters)))
+
+(defmethod print-object ((obj HL7Root) out)
+  (print-unreadable-object (obj out :type t)
+    (format out "~a" (value obj))))
 
 (defgeneric insert-at (h index value))
 
@@ -62,7 +66,7 @@
 
 ;------------HL7Field------------
 
-(defclass HL7Field ()
+(defclass HL7Field (HL7Root)
   ((components :reader components)))
 
 (defmethod initialize-instance :after ((f HL7Field) &key value delimiters)
@@ -79,7 +83,7 @@
 
 ;------------HL7Component------------
 
-(defclass HL7Component ()
+(defclass HL7Component (HL7Root)
   ((subcomponents :reader subcomponents)))
 
 (defmethod initialize-instance :after ((c HL7Component) &key value delimiters)
