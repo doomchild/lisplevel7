@@ -2,7 +2,8 @@
 
 (defpackage #:lisplevel7
   (:use #:cl)
-  (:export :HL7Message
+  (:export :HL7Delimiters
+	   :HL7Message
 	   :HL7Segment
 	   :HL7Field
 	   :HL7Component
@@ -12,7 +13,6 @@
 	   :fields
 	   :components
 	   :subcomponents
-	   :insert-at
-	   :get-default-delimiter-hash-table)
+	   :insert-at)
   (:shadowing-import-from #:split-sequence))
 
