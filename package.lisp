@@ -3,12 +3,17 @@
 (defpackage #:lisplevel7
   (:use #:cl)
   (:export :HL7Delimiters
+	   :field
+	   :component
+	   :repeat
+	   :subcomponent
+	   :escape
+	   :HL7Root
 	   :HL7Message
 	   :HL7Segment
 	   :HL7Field
 	   :HL7Component
 	   :delimiters
-	   :delimiter
 	   :value
 	   :fields
 	   :components
