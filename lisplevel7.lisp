@@ -9,6 +9,11 @@
    (subcomponent :accessor subcomponent :initarg :subcomponent :initform #\&)
    (escape :accessor escape :initarg :escape :initform #\\)))
 
+(defmethod print-object ((obj HL7Delimiters) out)
+  (print-unreadable-object (obj out :type t)
+    (with-slots (field component repeat subcomponent escape) obj
+      (format out "field:~a component:~a repeat:~a subcomponent:~a escape:~a" field component repeat subcomponent escape))))
+
 (defclass HL7Root ()
   ((value :reader value :initarg :value)
    (delimiters :reader delimiters)))
