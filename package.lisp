@@ -1,7 +1,7 @@
 ;;;; package.lisp
 
 (defpackage #:lisplevel7
-  (:use #:cl)
+  (:use #:cl #:alexandria #:iterate)
   (:export :HL7Delimiters
 	   :field
 	   :component

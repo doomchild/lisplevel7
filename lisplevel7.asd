@@ -5,7 +5,9 @@
   :author "Lee Crabtree <lee.crabtree@gmail.com>"
   :license "Specify license here"
   :serial t
-  :depends-on (#:split-sequence)
+  :depends-on (#:split-sequence
+	       #:alexandria
+	       #:iterate)
   :components ((:file "package")
                (:file "lisplevel7")))
 
