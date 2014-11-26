@@ -69,6 +69,23 @@
 						:element-type 'HL7Field
 						:initial-contents (mapcar (lambda (s) (make-instance 'HL7Field :value s :delimiters delimiters)) repeats)))))))))
 
+(defmethod insert-at ((h HL7Segment) index (value string))
+  (with-slots (delimiters) h
+    (insert-at h index (make-instance 'HL7Field :value value :delimiters delimiters))))
+
+(defmethod insert-at ((h HL7Segment) index (value HL7Field))
+  (with-slots (fields delimiters) h
+    (when (> index (length fields))
+      (let ((new (make-array index)))
+	(replace new fields)
+	(setf fields new)))
+    (let* ((field (aref fields index))
+	   (new (make-array (1+ (length field)) :element-type 'HL7Field :initial-element (make-instance 'HL7Field :value "" :delimiters delimiters))))
+      (replace new field)
+      (setf field new)
+      (setf (aref field (1- (length field))) value)
+      (setf (aref fields index) field))))
+
 ;------------HL7Field------------
 
 (defclass HL7Field (HL7Root)
