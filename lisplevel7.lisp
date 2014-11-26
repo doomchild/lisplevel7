@@ -16,7 +16,7 @@
 
 (defclass HL7Root ()
   ((value :reader value :initarg :value)
-   (delimiters :reader delimiters)))
+   (delimiters :reader delimiters :initarg :delimiters)))
 
 (defmethod print-object ((obj HL7Root) out)
   (print-unreadable-object (obj out :type t)
@@ -103,6 +103,16 @@
   (with-slots (components delimiters) h
     (extend-and-insert components 'HL7Component (make-instance 'HL7Component :value "" :delimiters delimiters) index value)))
 
+(defmethod value ((h HL7Field))
+  (with-slots (components delimiters) h
+    (let ((compdelimiter (component delimiters)))
+      (with-output-to-string (s)
+	(iterate:iterate (iterate:for sub in-sequence components) (iterate:for i from 0 to (length components))
+			 (format s "~a" (value sub))
+			 (when (< i (1- (length components)))
+			   (format s "~a" compdelimiter)))))))
+
+
 ;------------HL7Component------------
 
 (defclass HL7Component (HL7Root)
@@ -119,3 +129,12 @@
 (defmethod insert-at ((h HL7Component) index value)
   (with-slots (subcomponents) h
     (extend-and-insert subcomponents 'string "" index value)))
+
+(defmethod value ((h HL7Component))
+  (with-slots (subcomponents delimiters) h
+    (let ((subcompdelimiter (subcomponent delimiters)))
+      (with-output-to-string (s)
+	(iterate:iterate (iterate:for sub in-sequence subcomponents) (iterate:for i from 0 to (length subcomponents))
+			 (format s "~a" sub)
+			 (when (< i (1- (length subcomponents)))
+			   (format s "~a" subcompdelimiter)))))))
