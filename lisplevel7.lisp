@@ -2,6 +2,24 @@
 
 (defparameter *whitespace* '(#\Space #\Tab #\Newline #\Backspace #\Linefeed #\Page #\Return #\Rubout))
 
+;------------Class defs------------
+
+(defclass HL7Root ()
+  ((value :reader value :initarg :value)
+   (delimiters :reader delimiters :initarg :delimiters)))
+
+(defclass HL7Message (HL7Root)
+  ((segments :reader segments)))
+
+(defclass HL7Segment (HL7Root)
+  ((fields :reader fields)))
+
+(defclass HL7Field (HL7Root)
+  ((components :reader components)))
+
+(defclass HL7Component (HL7Root)
+  ((subcomponents :reader subcomponents)))
+
 (defclass HL7Delimiters ()
   ((field :accessor field :initarg :field :initform #\|)
    (component :accessor component :initarg :component :initform #\^)
@@ -13,10 +31,6 @@
   (print-unreadable-object (obj out :type t)
     (with-slots (field component repeat subcomponent escape) obj
       (format out "field:~a component:~a repeat:~a subcomponent:~a escape:~a" field component repeat subcomponent escape))))
-
-(defclass HL7Root ()
-  ((value :reader value :initarg :value)
-   (delimiters :reader delimiters :initarg :delimiters)))
 
 (defmethod print-object ((obj HL7Root) out)
   (print-unreadable-object (obj out :type t)
@@ -31,10 +45,14 @@
 	(setf arr new)))
   (setf (aref arr (1- index)) value))
 
-;------------HL7Message------------
+(defun delimit (sequence delimiter)
+  (with-output-to-string (s)
+    (iterate:iterate (iterate:for entry in-sequence sequence) (iterate:for i from 0 to (length sequence))
+		     (format s "~a" entry)
+		     (when (< i (1- (length sequence)))
+		       (format s "~a" delimiter)))))
 
-(defclass HL7Message (HL7Root)
-  ((segments :reader segments)))
+;------------HL7Message------------
 
 (defmethod initialize-instance :after ((h HL7Message) &key value)
   (let* ((stripped (remove-if-not #'standard-char-p value))
@@ -53,10 +71,12 @@
       :subcomponent (elt s 6)
       :escape (elt s 7)))
 
-;------------HL7Segment------------
+(defmethod value ((h HL7Message))
+  (with-slots (segments) h
+    (delimit segments #\Newline)))
+    
 
-(defclass HL7Segment (HL7Root)
-  ((fields :reader fields)))
+;------------HL7Segment------------
 
 (defmethod initialize-instance :after ((s HL7Segment) &key value delimiters)
   (with-slots (field repeat) delimiters
@@ -86,10 +106,12 @@
       (setf (aref field (1- (length field))) value)
       (setf (aref fields index) field))))
 
-;------------HL7Field------------
+(defmethod value ((h HL7Segment))
+  (with-slots (fields delimiters) h
+    (let ((field-delimiter (field delimiters)))
+      (delimit fields field-delimiter))))
 
-(defclass HL7Field (HL7Root)
-  ((components :reader components)))
+;------------HL7Field------------
 
 (defmethod initialize-instance :after ((f HL7Field) &key value delimiters)
   (with-slots (component) delimiters
@@ -106,17 +128,9 @@
 (defmethod value ((h HL7Field))
   (with-slots (components delimiters) h
     (let ((compdelimiter (component delimiters)))
-      (with-output-to-string (s)
-	(iterate:iterate (iterate:for sub in-sequence components) (iterate:for i from 0 to (length components))
-			 (format s "~a" (value sub))
-			 (when (< i (1- (length components)))
-			   (format s "~a" compdelimiter)))))))
-
+      (delimit components compdelimiter))))
 
 ;------------HL7Component------------
-
-(defclass HL7Component (HL7Root)
-  ((subcomponents :reader subcomponents)))
 
 (defmethod initialize-instance :after ((c HL7Component) &key value delimiters)
   (with-slots (subcomponent) delimiters
@@ -133,8 +147,4 @@
 (defmethod value ((h HL7Component))
   (with-slots (subcomponents delimiters) h
     (let ((subcompdelimiter (subcomponent delimiters)))
-      (with-output-to-string (s)
-	(iterate:iterate (iterate:for sub in-sequence subcomponents) (iterate:for i from 0 to (length subcomponents))
-			 (format s "~a" sub)
-			 (when (< i (1- (length subcomponents)))
-			   (format s "~a" subcompdelimiter)))))))
+      (delimit subcomponents subcompdelimiter))))
