@@ -37,6 +37,8 @@
     (format out "~a" (value obj))))
 
 (defgeneric insert-at (h index value))
+(defgeneric value (h))
+(defgeneric query (h position))
 
 (defun extend-and-insert (arr arr-type arr-init-element index value)
   (when (> index (length arr))
