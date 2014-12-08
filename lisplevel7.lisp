@@ -47,6 +47,9 @@
 	(setf arr new)))
   (setf (aref arr (1- index)) value))
 
+(defun split (s delimiter)
+  (split-sequence:split-sequence delimiter s))
+
 (defun delimit (sequence delimiter)
   (with-output-to-string (s)
     (iterate:iterate (iterate:for entry in-sequence sequence) (iterate:for i from 0 to (length sequence))
@@ -58,12 +61,12 @@
 
 (defmethod initialize-instance :after ((h HL7Message) &key value)
   (let* ((stripped (remove-if-not #'standard-char-p value))
-	 (split (split-sequence:split-sequence #\Newline stripped)))
+	 (split-string (split #\Newline stripped)))
     (with-slots (delimiters segments) h
       (setf delimiters (read-delimiters stripped))
-      (setf segments (make-array (length split)
+      (setf segments (make-array (length split-string)
 				 :element-type 'HL7Segment
-				 :initial-contents (mapcar (lambda (s) (make-instance 'HL7Segment :value s :delimiters delimiters)) split))))))
+				 :initial-contents (mapcar (lambda (s) (make-instance 'HL7Segment :value s :delimiters delimiters)) split-string))))))
 
 (defun read-delimiters (s)
   (make-instance 'HL7Delimiters
@@ -76,17 +79,16 @@
 (defmethod value ((h HL7Message))
   (with-slots (segments) h
     (delimit segments #\Newline)))
-    
 
 ;------------HL7Segment------------
 
 (defmethod initialize-instance :after ((s HL7Segment) &key value delimiters)
   (with-slots (field repeat) delimiters
-    (let ((split (split-sequence:split-sequence field value)))
+    (let ((split-string (split field value)))
       (with-slots (fields) s
-	(setf fields (make-array (length split)))
-	(loop for f in split for i upto (length split) do
-	     (let ((repeats (split-sequence:split-sequence repeat f)))
+	(setf fields (make-array (length split-string)))
+	(loop for f in split-string for i upto (length split-string) do
+	     (let ((repeats (split repeat f)))
 	       (setf (elt fields i) (make-array (length repeats)
 						:element-type 'HL7Field
 						:initial-contents (mapcar (lambda (s) (make-instance 'HL7Field :value s :delimiters delimiters)) repeats)))))))))
@@ -117,11 +119,11 @@
 
 (defmethod initialize-instance :after ((f HL7Field) &key value delimiters)
   (with-slots (component) delimiters
-  (let ((split (split-sequence:split-sequence component value)))
+  (let ((split-string (split component value)))
     (with-slots (components) f
-      (setf components (make-array (length split)
+      (setf components (make-array (length split-string)
 				   :element-type 'HL7Component
-				   :initial-contents (mapcar (lambda (s) (make-instance 'HL7Component :value s :delimiters delimiters)) split)))))))
+				   :initial-contents (mapcar (lambda (s) (make-instance 'HL7Component :value s :delimiters delimiters)) split-string)))))))
 
 (defmethod insert-at ((h HL7Field) index (value HL7Component))
   (with-slots (components delimiters) h
@@ -136,11 +138,11 @@
 
 (defmethod initialize-instance :after ((c HL7Component) &key value delimiters)
   (with-slots (subcomponent) delimiters
-    (let ((split (split-sequence:split-sequence subcomponent value)))
+    (let ((split-string (split subcomponent value)))
       (with-slots (subcomponents) c
-	(setf subcomponents (make-array (length split)
+	(setf subcomponents (make-array (length split-string)
 					:element-type 'string
-					:initial-contents split))))))
+					:initial-contents split-string))))))
 
 (defmethod insert-at ((h HL7Component) index value)
   (with-slots (subcomponents) h
